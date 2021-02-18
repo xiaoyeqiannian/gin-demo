@@ -1,0 +1,550 @@
+info:
+  contact: {}
+  license: {}
+paths:
+  /api/v1/banner/list:
+    get:
+      description: banner
+      parameters:
+      - description: 页码
+        in: query
+        name: page
+        type: integer
+      - description: 每页展示数量
+        in: query
+        name: per_page
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "0":
+          description: '{"code": 0,"msg": "ok","data": {"items": [{"id": 1,"poster": "http://pic.cuanpian.com/11111","path": "1111"}],"total": 1}}'
+          schema:
+            type: string
+        "100":
+          description: '{"code": -100,"msg": "参数错误","data": null}'
+          schema:
+            type: string
+      summary: banner
+      tags:
+      - banner
+  /api/v1/file/upload:
+    post:
+      consumes:
+      - multipart/form-data
+      description: 上传文件
+      parameters:
+      - description: 文件
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "0":
+          description: '{"code": 0,"msg": "ok","data":{"src": "http://pic.cuanpian.com/cuanpian/df13e16abdd0c8317966dbe06cb20778"}}'
+          schema:
+            type: string
+        "100":
+          description: '{"code": -100,"msg": "参数错误","data": null}'
+          schema:
+            type: string
+      summary: 上传文件
+      tags:
+      - 视频
+  /api/v1/login:
+    post:
+      consumes:
+      - application/json
+      description: 登录
+      parameters:
+      - description: 微信登录凭证，用于获取openid
+        in: body
+        name: jscode
+        required: true
+        schema:
+          type: string
+      produces:
+      - application/json
+      responses:
+        "0":
+          description: '{"code": 0,"msg": "ok","data": {"token":"xxxxxx"}}'
+          schema:
+            type: string
+        "100":
+          description: '{"code": -100,"msg": "参数错误","data": null}'
+          schema:
+            type: string
+      summary: 登录
+      tags:
+      - 用户
+  /api/v1/trade/create:
+    post:
+      consumes:
+      - application/json
+      description: 下单
+      parameters:
+      - description: 视频id
+        in: body
+        name: video_id
+        required: true
+        schema:
+          type: integer
+      - description: 付款金额，单位分
+        in: body
+        name: amount
+        required: true
+        schema:
+          type: integer
+      - description: 手机号
+        in: body
+        name: phone
+        schema:
+          type: string
+      - description: 头图
+        in: body
+        name: poster
+        schema:
+          type: integer
+      - description: 标题
+        in: body
+        name: title
+        schema:
+          type: integer
+      - description: 微信预支付码
+        in: body
+        name: prepay_id
+        required: true
+        schema:
+          type: string
+      produces:
+      - application/json
+      responses:
+        "0":
+          description: '{"code": 0,"msg": "ok","data": null}'
+          schema:
+            type: string
+        "100":
+          description: '{"code": -100,"msg": "参数错误","data": null}'
+          schema:
+            type: string
+      summary: 下单
+      tags:
+      - 订单
+  /api/v1/trade/list:
+    get:
+      description: 订单列表
+      parameters:
+      - description: 页码
+        in: query
+        name: page
+        required: true
+        type: integer
+      - description: 每页展示数量
+        in: query
+        name: per_page
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "0":
+          description: '{"code": 0,"msg": "ok","data":{"items":[{"id": 1,"film_id": 11,"poster": "http://pic.cuanpian.com/","title": ""}],"total": 1}}'
+          schema:
+            type: string
+        "100":
+          description: '{"code": -100,"msg": "参数错误","data": null}'
+          schema:
+            type: string
+      summary: 订单列表
+      tags:
+      - 订单
+  /api/v1/trade/status:
+    get:
+      description: 订单状态查询
+      parameters:
+      - description: 订单id
+        in: query
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "0":
+          description: '{"code": 0,"msg": "ok","data":{"status": 0}}'
+          schema:
+            type: string
+        "100":
+          description: '{"code": -100,"msg": "参数错误","data": null}'
+          schema:
+            type: string
+      summary: 订单状态查询
+      tags:
+      - 订单
+  /api/v1/userinfo:
+    post:
+      consumes:
+      - application/json
+      description: 用户信息上传
+      parameters:
+      - description: iv
+        in: body
+        name: iv
+        required: true
+        schema:
+          type: string
+      - description: encrypted_data
+        in: body
+        name: encrypted_data
+        required: true
+        schema:
+          type: string
+      produces:
+      - application/json
+      responses:
+        "0":
+          description: '{"code": 0,"msg": "ok","data": null}'
+          schema:
+            type: string
+        "100":
+          description: '{"code": -100,"msg": "参数错误","data": null}'
+          schema:
+            type: string
+      summary: 用户信息上传
+      tags:
+      - 用户
+  /api/v1/video/collect:
+    post:
+      consumes:
+      - application/json
+      description: 收藏
+      parameters:
+      - description: 影片id
+        in: body
+        name: video_id
+        required: true
+        schema:
+          type: integer
+      produces:
+      - application/json
+      responses:
+        "0":
+          description: '{"code": 0,"msg": "ok","data": null}'
+          schema:
+            type: string
+        "100":
+          description: '{"code": -100,"msg": "参数错误","data": null}'
+          schema:
+            type: string
+      summary: 收藏
+      tags:
+      - 视频
+  /api/v1/video/collected:
+    get:
+      description: 收藏列表
+      parameters:
+      - description: 页码
+        in: query
+        name: page
+        type: integer
+      - description: 每页展示数量
+        in: query
+        name: per_page
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "0":
+          description: '{"code": 0,"msg": "ok","data":{"items": [{"id": 1,"video_id": 1,"poster": "http://pic.cuanpian.com/xxxxx","title": "dfsef"}],"total": 1}}'
+          schema:
+            type: string
+        "100":
+          description: '{"code": -100,"msg": "参数错误","data": null}'
+          schema:
+            type: string
+      summary: 收藏列表
+      tags:
+      - 视频
+  /api/v1/video/enjoy:
+    post:
+      consumes:
+      - application/json
+      description: 点赞
+      parameters:
+      - description: 视频id
+        in: body
+        name: video_id
+        required: true
+        schema:
+          type: integer
+      - description: 视频类型1:长，2:短
+        in: body
+        name: kind
+        required: true
+        schema:
+          type: integer
+      produces:
+      - application/json
+      responses:
+        "0":
+          description: '{"code": 0,"msg": "ok","data": null}'
+          schema:
+            type: string
+        "100":
+          description: '{"code": -100,"msg": "参数错误","data": null}'
+          schema:
+            type: string
+      summary: 点赞
+      tags:
+      - 视频
+  /api/v1/video/hot:
+    get:
+      description: 热映
+      parameters:
+      - description: 页码
+        in: query
+        name: page
+        required: true
+        type: integer
+      - description: 每页展示数量
+        in: query
+        name: per_page
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "0":
+          description: '{"code": 0,"msg": "ok","data": "items": [{"id": 1,"title": "测试","src": "ssss","poster": "http://pic.cuanpian.comssss","poster_r": "http://pic.cuanpian.comssss","sub_title":"一句话","kind":"剧情","duration":90,"language":"汉语","director":["导演x"],"actors":["xxx","xx"]}],"total": 1}'
+          schema:
+            type: string
+        "100":
+          description: '{"code": -100,"msg": "参数错误","data": null}'
+          schema:
+            type: string
+      summary: 热映
+      tags:
+      - 视频
+  /api/v1/video/info:
+    get:
+      description: 视频信息
+      parameters:
+      - description: 视频id
+        in: query
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "0":
+          description: '{"code": 0,"msg": "ok","data": {"id": 1,"title": "测试","src": {"1080":"xxx","720":"xxxx"},"poster": "http://pic.cuanpian.comssss","poster_r": "http://pic.cuanpian.comssss","price": 200,"show_price": 400,"size": 30,"start": 0,"end": 0,"ShowTimes": 0}}'
+          schema:
+            type: string
+        "100":
+          description: '{"code": -100,"msg": "参数错误","data": null}'
+          schema:
+            type: string
+      summary: 视频信息
+      tags:
+      - 视频
+  /api/v1/video/list:
+    get:
+      description: 短视频列表
+      parameters:
+      - description: 页码
+        in: query
+        name: page
+        required: true
+        type: integer
+      - description: 每页展示数量
+        in: query
+        name: per_page
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "0":
+          description: '{"code": 0,"msg": "ok","data": {"items": [{"id": 1,"title": "ceshi","large_id": 1,"src": "2222","poster": "http://pic.cuanpian.com1111","size": 111,"enjoy":1}],"total": 1}}'
+          schema:
+            type: string
+        "100":
+          description: '{"code": -100,"msg": "参数错误","data": null}'
+          schema:
+            type: string
+      summary: 短视频列表
+      tags:
+      - 视频
+  /api/v1/video/new:
+    get:
+      description: 最新上映
+      parameters:
+      - description: 页码
+        in: query
+        name: page
+        required: true
+        type: integer
+      - description: 每页展示数量
+        in: query
+        name: per_page
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "0":
+          description: '{"code": 0,"msg": "ok","data": null}'
+          schema:
+            type: string
+        "100":
+          description: '{"code": -100,"msg": "参数错误","data": null}'
+          schema:
+            type: string
+      summary: 最新上映
+      tags:
+      - 视频
+  /api/v1/video/recommend:
+    get:
+      description: 推荐
+      parameters:
+      - description: 页码
+        in: query
+        name: page
+        required: true
+        type: integer
+      - description: 每页展示数量
+        in: query
+        name: per_page
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "0":
+          description: '{"code": 0,"msg": "ok","data":{"items": [{"id": 1,"title": "ceshi","large_id": 1,"src": "2222","poster": "http://pic.cuanpian.com1111","size": 111}],"total": 1}}'
+          schema:
+            type: string
+        "100":
+          description: '{"code": -100,"msg": "参数错误","data": null}'
+          schema:
+            type: string
+      summary: 推荐
+      tags:
+      - 视频
+  /api/v1/video/search:
+    get:
+      description: 视频检索
+      parameters:
+      - description: 关键词
+        in: query
+        name: search_key
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "0":
+          description: '{"code": 0,"msg": "ok","data": null}'
+          schema:
+            type: string
+        "100":
+          description: '{"code": -100,"msg": "参数错误","data": null}'
+          schema:
+            type: string
+      summary: 视频检索
+      tags:
+      - 视频
+  /api/v1/video/viewed:
+    get:
+      description: 观看列表
+      parameters:
+      - description: 页码
+        in: query
+        name: page
+        type: integer
+      - description: 每页展示数量
+        in: query
+        name: per_page
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "0":
+          description: '{"code": 0,"msg": "ok","data": {"items": [{"id": 1,"video_id": 1,"poster": "http://pic.cuanpian.comxx","title": "xxxddd","viewed": 2222,"time_used":"观看少于1分钟"}],"total": 1}}'
+          schema:
+            type: string
+        "100":
+          description: '{"code": -100,"msg": "参数错误","data": null}'
+          schema:
+            type: string
+      summary: 观看列表
+      tags:
+      - 视频
+  /api/v1/video/viewed/add:
+    post:
+      consumes:
+      - application/json
+      description: 添加观看记录
+      parameters:
+      - description: 视频id
+        in: body
+        name: video_id
+        required: true
+        schema:
+          type: integer
+      - description: 视频类型1:长，2:短
+        in: body
+        name: kind
+        required: true
+        schema:
+          type: string
+      - description: 视频观看时间点，单位秒
+        in: body
+        name: viewed
+        required: true
+        schema:
+          type: string
+      produces:
+      - application/json
+      responses:
+        "0":
+          description: '{"code": 0,"msg": "ok","data": {}}'
+          schema:
+            type: string
+        "100":
+          description: '{"code": -100,"msg": "参数错误","data": null}'
+          schema:
+            type: string
+      summary: 添加观看记录
+      tags:
+      - 视频
+  /api/v1/video/viewed/del:
+    post:
+      consumes:
+      - application/json
+      description: 删除观看记录
+      parameters:
+      - description: 观看记录id
+        in: body
+        name: view_id
+        required: true
+        schema:
+          type: integer
+      produces:
+      - application/json
+      responses:
+        "0":
+          description: '{"code": 0,"msg": "ok","data": {}}'
+          schema:
+            type: string
+        "100":
+          description: '{"code": -100,"msg": "参数错误","data": null}'
+          schema:
+            type: string
+      summary: 删除观看记录
+      tags:
+      - 视频
+swagger: "2.0"

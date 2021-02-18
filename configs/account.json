@@ -1,0 +1,18 @@
+{
+    "server": {
+        "port": "5000"
+    },
+    "mysql":{
+        "user": "root",
+        "password": "123456",
+        "host": "127.0.0.1",
+        "port": "3306",
+        "db": "alita",
+        "charset": "utf8",
+        "parseTime": "True",
+        "loc": "Local"
+    },
+    "casbin":{
+        "model-path": "configs/rbac_model.conf"
+    }
+}
