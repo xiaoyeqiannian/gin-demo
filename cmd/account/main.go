@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	"go-server/app/account"
-	"go-server/database"
+	"gin-server/app/account"
+	"gin-server/database"
 
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"

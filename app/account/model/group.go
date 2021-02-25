@@ -2,10 +2,10 @@ package model
 
 
 import (
-	"fmt"
+	// "fmt"
 	"time"
-	"errors"
-	"go-server/database"
+	// "errors"
+	"gin-server/database"
 )
 
 
@@ -19,10 +19,10 @@ type Group struct {
 }
 
 // create or modify
-func (g *Group) Merge(id int, name string, kind, state int8) error {
-	if id > 0 {
-		if err := database.MysqlDB.First(g, id).Error; err != nil {
-			return errors.New(fmt.Sprintf("can not find group %d", id))
+func (g *Group) Merge(name string, kind, state int8) (id int, err error) {
+	if g.ID > 0 {
+		if _err := database.MysqlDB.First(g, g.ID).Error; _err != nil {
+			return 0, _err
 		}
 		d := make(map[string]interface{})
 		if state != 0 {
@@ -35,12 +35,12 @@ func (g *Group) Merge(id int, name string, kind, state int8) error {
 			d["Name"] = name
 		}
 		database.MysqlDB.Model(&g).Updates(d)
-	}else {
+	} else {
 		g.Name = name
 		g.Kind = kind
 		database.MysqlDB.Create(&g)
 	}
-	return nil
+	return g.ID, nil
 }
 
 

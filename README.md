@@ -1,3 +1,9 @@
+
+## run
+```
+go run cmd/account/main.go
+```
+
 ## go build
 ```
 CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build main.go
@@ -9,6 +15,7 @@ https://github.com/golang/go/blob/c04e47f82159f1010d7403276b3dff5ab836fd00/src/n
 
 ## api swagger
 ```
-cd cmd/account
-swag init -d ../../app/account/api_handler.go -o ../../app/account/docs -g ./
+//https://goswagger.io
+cd app/account
+swag init -g ../../cmd/account/main.go
 ```

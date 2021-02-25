@@ -4,8 +4,8 @@ package model
 import (
 	// "fmt"
 	"time"
-
-	"go-server/database"
+	// "errors"
+	"gin-server/database"
 )
 
 
@@ -22,6 +22,10 @@ type User struct {
 	State     int8      `gorm:"size:1; DEFAULT:1; COMMENT:'0:未激活，1:有效，2:已拉黑'" json:"state"`
 }
 
+// TableName overrides the table name used by User to `user`
+func (User) TableName() string {
+	return "user"
+}
 
 // func init() {
 // 	m := database.MysqlDB.AutoMigrate(&User{})
@@ -29,28 +33,45 @@ type User struct {
 // }
 
 
-func (u *User) Update(state int8, roleID int, pwd, avatar, email string) (code int, err error) {
-	if err = database.MysqlDB.First(u, u.ID).Error; err != nil {
-		return
+func (u *User) Merge(state int8, roleID, groupID int, name, pwd, avatar, email string) (id int, err error) {
+	if u.ID > 0 {
+		if _err := database.MysqlDB.First(u, u.ID).Error; _err != nil {
+			return 0, _err
+		}
+		d := make(map[string]interface{})
+		if state != 0 {
+			d["State"] = state
+		}
+		if roleID != 0 {
+			d["RoleID"] = roleID
+		}
+		if groupID != 0 {
+			d["GroupID"] = groupID
+		}
+		if pwd != "" {
+			d["Name"] = name
+		}
+		if pwd != "" {
+			d["Password"] = pwd
+		}
+		if avatar != "" {
+			d["Avatar"] = avatar
+		}
+		if email != "" {
+			d["Email"] = email
+		}
+		database.MysqlDB.Model(&u).Updates(d)
+	} else {
+		u.State = state
+		u.RoleID = roleID
+		u.Password = pwd
+		u.Avatar = avatar
+		u.Email = email
+		u.GroupID = groupID
+		u.Name = name
+		database.MysqlDB.Create(&u)
 	}
-	d := make(map[string]interface{})
-	if state != 0 {
-		d["State"] = state
-	}
-	if roleID != 0 {
-		d["RoleID"] = roleID
-	}
-	if pwd != "" {
-		d["Password"] = pwd
-	}
-	if avatar != "" {
-		d["Avatar"] = avatar
-	}
-	if email != "" {
-		d["Email"] = email
-	}
-	database.MysqlDB.Model(&u).Updates(d)
-	return
+	return u.ID, nil
 }
 
 

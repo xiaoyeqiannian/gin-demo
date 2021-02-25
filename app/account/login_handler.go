@@ -4,13 +4,12 @@ import (
 	"encoding/base64"
 	"net/http"
 
-	// "log"
-	"fmt"
+	// "fmt"
 	"time"
-	"go-server/app/account/middleware"
-	. "go-server/app/account/model"
-	. "go-server/database"
-	"go-server/utils"
+	"gin-server/app/account/middleware"
+	. "gin-server/app/account/model"
+	. "gin-server/database"
+	"gin-server/utils"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
@@ -23,43 +22,43 @@ type LoginParam struct {
 }
 
 
+// @Tags login
+// @Summary login
+// @version 1.0
+// @Description login
+// @Accept  application/json
+// @Produce json
+// @Param username body string true "登陆账号"
+// @Param password body string true "密码"
+// @Success 0000 {string} json "{"code":"0000","message":"ok","data":{"token":"xxx.xx.xx"}}"
+// @Failure 2101 {string} json "{"code":"2101","message":"name or password error","data":null}"
+// @Router /account/login [post]
 func Login(c *gin.Context) {
-	if c.Request.Method == "POST" {
-		var params LoginParam
-		if err := c.Bind(&params); err != nil {
-			fmt.Println("Login参数错误")
-			c.JSON(http.StatusOK, utils.RespJson(utils.PARAMERR, "参数错误", nil))
-			return
-		}
-		var u User
-		MysqlDB.First(&u, "name=?", params.Name)
-		if u.ID <= 0 {
-			c.JSON(http.StatusOK, utils.RespJson(utils.PARAMERR, "未找到此用户，请先注册", nil))
-			return
-		}
-		pwd, _ := base64.StdEncoding.DecodeString(params.Password)
-		fmt.Println("pwd", pwd)
-		if isOK := utils.CheckPasswordHash(u.Password, string(pwd)); isOK != true {
-			c.JSON(http.StatusOK, utils.RespJson(utils.PARAMERR, "账号或密码错误", nil))
-			return
-		}
-
-		token := jwt.NewWithClaims(jwt.SigningMethodHS256, middleware.CustomClaims{
-			middleware.PayLoad{UserID:u.ID, UserName:u.Name, Avatar:u.Avatar, RoleID:u.RoleID, GroupID:u.GroupID},
-			jwt.StandardClaims{ExpiresAt: int64(time.Now().Unix() + middleware.JWT_EXPIRE_TIME), Issuer:"go-server"},
-		})
-		tokenString, err := token.SignedString([]byte(middleware.JWT_KEY))
-		if err != nil {
-			c.JSON(http.StatusOK, utils.RespJson(utils.PARAMERR, "登录失败，请重试!", nil))
-			return
-		}
-		fmt.Println("login ok ", tokenString)
-		c.JSON(http.StatusOK, utils.RespJson(utils.REQOK, "ok", gin.H{"token": tokenString}))
-		return
-	} else {
-		c.HTML(http.StatusOK, "login.html", nil)
+	var p LoginParam
+	if err := c.Bind(&p); err != nil {
+		c.JSON(http.StatusOK, utils.RespJson(utils.PARAMERR, "Params error!", nil))
 		return
 	}
+	var u User
+	if MysqlDB.First(&u, "name=?", p.Name); u.ID<= 0 {
+		c.JSON(http.StatusOK, utils.RespJson(utils.PARAMERR, "Can not find this user, Please regist", nil))
+		return
+	}
+	pwd, _ := base64.StdEncoding.DecodeString(p.Password)
+	if isOK := utils.CheckPasswordHash(u.Password, string(pwd)); isOK != true {
+		c.JSON(http.StatusOK, utils.RespJson(utils.PARAMERR, "Name or password error", nil))
+		return
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, middleware.CustomClaims{
+		middleware.PayLoad{ UserID:u.ID, UserName:u.Name, Avatar:u.Avatar, RoleID:u.RoleID, GroupID:u.GroupID },
+		jwt.StandardClaims{ ExpiresAt: int64(time.Now().Unix() + middleware.JWT_EXPIRE_TIME), Issuer:"gin-server" },
+	})
+	if tokenString, err := token.SignedString([]byte(middleware.JWT_KEY)); err == nil {
+		c.JSON( http.StatusOK, utils.RespJson(utils.REQOK, "ok", gin.H{ "token": tokenString }) )
+		return
+	}
+	c.JSON(http.StatusOK, utils.RespJson(utils.PARAMERR, "login error, try again!", nil))
+	return
 }
 
 
@@ -69,33 +68,49 @@ func Logout(c *gin.Context) {
 }
 
 
+// @Tags regist
+// @Summary regist
+// @version 1.0
+// @Description regist
+// @Accept  application/json
+// @Produce json
+// @Param username body string true "登陆账号"
+// @Param password body string true "密码"
+// @Success 0000 {string} json "{"code":"0000","message":"ok","data":{"token":"xxx.xx.xx"}}"
+// @Failure 2101 {string} json "{"code":"2101","message":"name or password error","data":null}"
+// @Router /account/regist [post]
 func Regist(c *gin.Context) {
-	var params LoginParam
-	if err := c.Bind(&params); err != nil {
-		c.JSON(http.StatusOK, utils.RespJson(utils.PARAMERR, "参数错误", nil))
+	var p LoginParam
+	if err := c.Bind(&p); err != nil {
+		c.JSON(http.StatusOK, utils.RespJson(utils.PARAMERR, "Params error!", nil))
 		return
 	}
 	var u User
-	MysqlDB.First(&u, "name=?", params.Name)
+	MysqlDB.First(&u, "name=?", p.Name)
 	if u.ID > 0 {
-		c.JSON(http.StatusOK, utils.RespJson(utils.PARAMERR, "此账号已注册，请直接登录", nil))
+		c.JSON(http.StatusOK, utils.RespJson(utils.PARAMERR, "Registed, Please login", nil))
 		return
 	}
-	pwd, err := utils.GeneratePasswordHash(params.Password)
+	tmp, err := base64.StdEncoding.DecodeString(p.Password)
 	if err != nil {
-		c.JSON(http.StatusOK, utils.RespJson(utils.PARAMERR, "注册失败", nil))
+		c.JSON(http.StatusOK, utils.RespJson(utils.PARAMERR, "Parse password error!", nil))
+		return
+	}
+	pwd, err := utils.GeneratePasswordHash(string(tmp))
+	if err != nil {
+		c.JSON(http.StatusOK, utils.RespJson(utils.PARAMERR, "Generate password error!", nil))
 		return
 	}
 	var g Group
-	if err := g.Merge(0, params.Name, GROUP_KIND_PERSONAL, 1); err != nil {
+	if _, err := g.Merge(p.Name, GROUP_KIND_PERSONAL, 1); err != nil {
 		c.JSON(http.StatusOK, utils.RespJson(utils.PARAMERR, err.Error(), nil))
 		return
 	}
-	manager := User{Name: params.Name,
-		            Password: pwd,
-					RoleID: ROLE_ADMIN_ID,
-					GroupID: g.ID}
-	MysqlDB.Create(&manager)
+	manager := User{Name: p.Name, Password: pwd, RoleID: ROLE_ADMIN_ID, GroupID: g.ID}
+	if MysqlDB.Create(&manager); manager.ID == 0{
+		c.JSON(http.StatusOK, utils.RespJson(utils.PARAMERR, "Insert data error!", nil))
+		return
+	}
 	c.JSON(http.StatusOK, utils.RespJson(utils.REQOK, "ok", nil))
 	return
 }

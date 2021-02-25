@@ -1,9 +1,9 @@
 package account
 
 import (
-	_ "go-server/app/account/docs"
+	_ "gin-server/app/account/docs"
 
-	"go-server/app/account/middleware"
+	"gin-server/app/account/middleware"
 
 	"github.com/gin-gonic/gin"
 	ginSwagger "github.com/swaggo/gin-swagger"
@@ -12,25 +12,27 @@ import (
 
 func InitRouter(router *gin.Engine) *gin.Engine {
 
-	router.POST("/login", Login)
-	router.POST("/logout", middleware.JwtAuth(), Logout)
-	router.POST("/regist", Regist)
+	router.POST("/account/login", Login)
+	router.POST("/account/logout", middleware.JwtAuth(), Logout)
+	router.POST("/account/regist", Regist)
+	router.POST("/account/password/modify", middleware.JwtAuth(), AccountPasswordModify)
 
 	apiAccount := router.Group("/account").Use(middleware.JwtAuth()).Use(middleware.PermissionHandler())
 	{
 		apiAccount.POST("/modify", AccountModify)
 		apiAccount.GET("/list", AccountList)
 		apiAccount.POST("/del", AccountDel)
+		apiAccount.POST("/sub/add", AccountSubAdd)
 
 		apiAccount.POST("/menu", AccountMenu)
 
 		apiAccount.POST("/role/modify", RoleModify)
 		apiAccount.GET("/role/list", RoleList)
-		apiAccount.GET("/role/del", RoleDel)
+		apiAccount.POST("/role/del", RoleDel)
 		
 		apiAccount.POST("/group/modify", GroupModify)
 		apiAccount.GET("/group/list", GroupList)
-		apiAccount.GET("/group/del", GroupDel)
+		apiAccount.POST("/group/del", GroupDel)
 	}
 
 	apiFile := router.Group("/file").Use(middleware.JwtAuth()).Use(middleware.PermissionHandler())

@@ -2,7 +2,7 @@ package proc
 
 import (
 	"strings"
-	. "go-server/database"
+	. "gin-server/database"
 
 	"github.com/casbin/casbin"
 	"github.com/casbin/casbin/util"

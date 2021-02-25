@@ -1,19 +1,10 @@
 package account
 
 import (
-	// "encoding/json"
-
 	// "fmt"
 	"net/http"
-	// "strconv"
-	// "time"
-	"go-server/utils"
+	"gin-server/utils"
 
-	// "go-server/app/account/middleware"
-	// . "go-server/app/account/model"
-	// . "go-server/database"
-
-	// "github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 )
 

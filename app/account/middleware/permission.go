@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"strings"
 	"net/http"
-	"go-server/app/account/proc"
-	"go-server/app/account/model"
-	"go-server/utils"
+	"gin-server/app/account/proc"
+	"gin-server/app/account/model"
+	"gin-server/utils"
 
 	"github.com/gin-gonic/gin"
 )
