@@ -68,14 +68,16 @@ func JwtAuth() gin.HandlerFunc {
 			c.JSON(http.StatusOK, utils.RespJson(utils.LOGINERR, "login error", nil))
 			return
 		}
-		
-		c.Set("claims", gin.H{
-						"user_name":   claims.Identity.UserName,
-						"user_id":     claims.Identity.UserID,
-						"avatar":      claims.Identity.Avatar,
-						"role_id":     claims.Identity.RoleID,
-						"group_id":    claims.Identity.GroupID,
-						"current_url": c.Request.URL.Path})
+		c.Set("CurrentUser", claims.Identity)
 		c.Next()
+	}
+}
+
+
+func GetCurrentUser(c *gin.Context, p *PayLoad){
+	if tmp, ok := c.Get("CurrentUser"); ok {
+		if claims, ok := tmp.(PayLoad); ok {
+			*p = claims
+		}
 	}
 }

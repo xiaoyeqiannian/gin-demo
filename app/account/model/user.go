@@ -4,7 +4,9 @@ package model
 import (
 	// "fmt"
 	"time"
-	// "errors"
+	"errors"
+	"encoding/base64"
+	"gin-server/utils"
 	"gin-server/database"
 )
 
@@ -33,52 +35,83 @@ func (User) TableName() string {
 // }
 
 
-func (u *User) Merge(state int8, roleID, groupID int, name, pwd, avatar, email string) (id int, err error) {
-	if u.ID > 0 {
-		if _err := database.MysqlDB.First(u, u.ID).Error; _err != nil {
-			return 0, _err
-		}
-		d := make(map[string]interface{})
-		if state != 0 {
-			d["State"] = state
-		}
-		if roleID != 0 {
-			d["RoleID"] = roleID
-		}
-		if groupID != 0 {
-			d["GroupID"] = groupID
-		}
-		if pwd != "" {
-			d["Name"] = name
-		}
-		if pwd != "" {
-			d["Password"] = pwd
-		}
-		if avatar != "" {
-			d["Avatar"] = avatar
-		}
-		if email != "" {
-			d["Email"] = email
-		}
-		database.MysqlDB.Model(&u).Updates(d)
-	} else {
-		u.State = state
-		u.RoleID = roleID
-		u.Password = pwd
-		u.Avatar = avatar
-		u.Email = email
-		u.GroupID = groupID
-		u.Name = name
-		database.MysqlDB.Create(&u)
+func (u *User) Update(state int8, roleID, groupID int, name, pwd, avatar, email string) (id int, err error) {
+	if u.ID == 0 {
+		return 0, errors.New("user is gone")
 	}
+	if _err := database.MysqlDB.First(u, u.ID).Error; _err != nil {
+		return 0, _err
+	}
+	d := make(map[string]interface{})
+	if state != 0 {
+		d["State"] = state
+	}
+	if roleID != 0 {
+		d["RoleID"] = roleID
+	}
+	if groupID != 0 {
+		d["GroupID"] = groupID
+	}
+	if name != "" {
+		d["Name"] = name
+	}
+	if pwd != "" {
+		tmp, err := base64.StdEncoding.DecodeString(pwd)
+		if err != nil {
+			return 0, errors.New("decode password error")
+		}
+		spwd, err := utils.GeneratePasswordHash(string(tmp))
+		if err != nil {
+			return 0, errors.New("encode password error")
+		}
+		d["Password"] = spwd
+	}
+	if avatar != "" {
+		d["Avatar"] = avatar
+	}
+	if email != "" {
+		d["Email"] = email
+	}
+	database.MysqlDB.Model(&u).Updates(d)
 	return u.ID, nil
 }
 
 
+func (u *User) Add(roleID, groupID int, name, pwd, avatar, email string) (id int, err error) {
+	u.State = STATUS_VALID
+	u.RoleID = roleID
+	u.Password = pwd
+	u.Avatar = avatar
+	u.Email = email
+	u.GroupID = groupID
+	u.Name = name
+	database.MysqlDB.Create(&u)
+	return u.ID, nil
+}
+
+
+func (u *User) Del(IDs []int, group_id int) (err error) {
+	sql := database.MysqlDB.Table("user").Where("id in (?)", IDs)
+	if group_id != GROUP_SYS_ADMIN_ID {
+		sql = sql.Where("group_id=?", group_id)
+	}
+	sql.Update("state", STATUS_DELETED)
+	return nil
+}
+
+
+func (u *User) PasswordUpdate(pwd string) (err error) {
+	if _, _err := u.Update(0, 0, 0, "", pwd, "", ""); _err != nil {
+		return _err
+	}
+	return nil
+}
+
+
 func (u *User) ParseState() string {
-	if u.State == 1 {
+	if u.State == STATUS_VALID {
 		return "已激活"
-	} else if u.State == 2 {
+	} else if u.State == STATUS_DELETED {
 		return "已拉黑"
 	} else {
 		return "未激活"

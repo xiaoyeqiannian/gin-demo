@@ -14,3 +14,8 @@ const GROUP_KIND_GROUP = 2    // 团体/企业
 // 验证码
 const VERIFY_CODE_LENGTH = 6
 const VERIFY_CODE_EXPIRE_TIME = 60*5
+
+// status
+const STATUS_INVALID = 0
+const STATUS_VALID = 1
+const STATUS_DELETED = 2

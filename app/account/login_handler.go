@@ -91,22 +91,12 @@ func Regist(c *gin.Context) {
 		c.JSON(http.StatusOK, utils.RespJson(utils.PARAMERR, "Registed, Please login", nil))
 		return
 	}
-	tmp, err := base64.StdEncoding.DecodeString(p.Password)
-	if err != nil {
-		c.JSON(http.StatusOK, utils.RespJson(utils.PARAMERR, "Parse password error!", nil))
-		return
-	}
-	pwd, err := utils.GeneratePasswordHash(string(tmp))
-	if err != nil {
-		c.JSON(http.StatusOK, utils.RespJson(utils.PARAMERR, "Generate password error!", nil))
-		return
-	}
 	var g Group
-	if _, err := g.Merge(p.Name, GROUP_KIND_PERSONAL, 1); err != nil {
+	if _, err := g.Add(p.Name, GROUP_KIND_PERSONAL); err != nil {
 		c.JSON(http.StatusOK, utils.RespJson(utils.PARAMERR, err.Error(), nil))
 		return
 	}
-	manager := User{Name: p.Name, Password: pwd, RoleID: ROLE_ADMIN_ID, GroupID: g.ID}
+	manager := User{Name: p.Name, Password: p.Password, RoleID: ROLE_ADMIN_ID, GroupID: g.ID}
 	if MysqlDB.Create(&manager); manager.ID == 0{
 		c.JSON(http.StatusOK, utils.RespJson(utils.PARAMERR, "Insert data error!", nil))
 		return

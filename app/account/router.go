@@ -12,27 +12,32 @@ import (
 
 func InitRouter(router *gin.Engine) *gin.Engine {
 
-	router.POST("/account/login", Login)
-	router.POST("/account/logout", middleware.JwtAuth(), Logout)
-	router.POST("/account/regist", Regist)
-	router.POST("/account/password/modify", middleware.JwtAuth(), AccountPasswordModify)
-
-	apiAccount := router.Group("/account").Use(middleware.JwtAuth()).Use(middleware.PermissionHandler())
+	apiA := router.Group("/account")
 	{
-		apiAccount.POST("/modify", AccountModify)
-		apiAccount.GET("/list", AccountList)
-		apiAccount.POST("/del", AccountDel)
-		apiAccount.POST("/sub/add", AccountSubAdd)
+		apiA.POST("/login", Login)
+		apiA.POST("/logout", middleware.JwtAuth(), Logout)
+		apiA.POST("/regist", Regist)
+		apiA.POST("/code/verify", CodeVerify)
+		apiA.POST("/password/forget", PasswordForget)
+		apiA.POST("/password/modify", middleware.JwtAuth(), AccountPasswordModify)
+	}
 
-		apiAccount.POST("/menu", AccountMenu)
+	apiAPro := router.Group("/account").Use(middleware.JwtAuth()).Use(middleware.PermissionHandler())
+	{
+		apiAPro.POST("/modify", AccountModify)
+		apiAPro.GET("/list", AccountList)
+		apiAPro.POST("/del", AccountDel)
+		apiAPro.POST("/sub/add", AccountSubAdd)
 
-		apiAccount.POST("/role/modify", RoleModify)
-		apiAccount.GET("/role/list", RoleList)
-		apiAccount.POST("/role/del", RoleDel)
+		apiAPro.POST("/menu", AccountMenu)
+
+		apiAPro.POST("/role/modify", RoleModify)
+		apiAPro.GET("/role/list", RoleList)
+		apiAPro.POST("/role/del", RoleDel)
 		
-		apiAccount.POST("/group/modify", GroupModify)
-		apiAccount.GET("/group/list", GroupList)
-		apiAccount.POST("/group/del", GroupDel)
+		apiAPro.POST("/group/modify", GroupModify)
+		apiAPro.GET("/group/list", GroupList)
+		apiAPro.POST("/group/del", GroupDel)
 	}
 
 	apiFile := router.Group("/file").Use(middleware.JwtAuth()).Use(middleware.PermissionHandler())

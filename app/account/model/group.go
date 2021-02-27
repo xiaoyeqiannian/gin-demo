@@ -4,7 +4,7 @@ package model
 import (
 	// "fmt"
 	"time"
-	// "errors"
+	"errors"
 	"gin-server/database"
 )
 
@@ -19,35 +19,50 @@ type Group struct {
 }
 
 // create or modify
-func (g *Group) Merge(name string, kind, state int8) (id int, err error) {
-	if g.ID > 0 {
-		if _err := database.MysqlDB.First(g, g.ID).Error; _err != nil {
-			return 0, _err
-		}
-		d := make(map[string]interface{})
-		if state != 0 {
-			d["State"] = state
-		}
-		if kind != 0 {
-			d["Kind"] = kind
-		}
-		if name != "" {
-			d["Name"] = name
-		}
-		database.MysqlDB.Model(&g).Updates(d)
-	} else {
-		g.Name = name
-		g.Kind = kind
-		database.MysqlDB.Create(&g)
+func (g *Group) Update(name string, kind, state int8) (id int, err error) {
+	if g.ID == 0 {
+		return 0, errors.New("Group is gone")
 	}
+	if _err := database.MysqlDB.First(g, g.ID).Error; _err != nil {
+		return 0, _err
+	}
+	d := make(map[string]interface{})
+	if state != 0 {
+		d["State"] = state
+	}
+	if kind != 0 {
+		d["Kind"] = kind
+	}
+	if name != "" {
+		d["Name"] = name
+	}
+	database.MysqlDB.Model(&g).Updates(d)
 	return g.ID, nil
 }
 
 
+func (g *Group) Add(name string, kind int8) (id int, err error) {
+	g.Name = name
+	g.Kind = kind
+	database.MysqlDB.Create(&g)
+	return g.ID, nil
+}
+
+
+func (g *Group) Del(IDs []int, group_id int) (err error) {
+	if group_id != GROUP_SYS_ADMIN_ID {
+		return errors.New("Fail")
+	}
+	sql := database.MysqlDB.Table("group").Where("id in (?)", IDs)
+	sql.Update("state", STATUS_DELETED)
+	return nil
+}
+
+
 func (g *Group) ParseState() string {
-	if g.State == 1 {
+	if g.State == STATUS_VALID {
 		return "有效"
-	} else if g.State == 2 {
+	} else if g.State == STATUS_DELETED {
 		return "无效"
 	} else {
 		return "未知"

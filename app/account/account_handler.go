@@ -3,14 +3,17 @@ package account
 import (
 	"net/http"
 	"strconv"
-	"fmt"
+	// "fmt"
 	"encoding/base64"
 	"strings"
+	"github.com/gin-gonic/gin"
+
 	. "gin-server/app/account/model"
 	"gin-server/app/account/proc"
 	. "gin-server/database"
 	"gin-server/utils"
-	"github.com/gin-gonic/gin"
+	. "gin-server/app/account/middleware"
+	
 )
 
 type AccountParam struct {
@@ -23,12 +26,8 @@ type AccountParam struct {
 	Email    string `json:"email"`
 }
 func AccountModify(c *gin.Context) {
-	var currentUser gin.H
-	if tmp, ok := c.Get("claims"); ok {
-		if claims, ok := tmp.(gin.H); ok {
-			currentUser = claims
-		}
-	}
+	var currentUser PayLoad
+	GetCurrentUser(c, &currentUser)
 	var p AccountParam
 	if _err := c.Bind(&p); _err != nil {
 		c.JSON(http.StatusOK, utils.RespJson(utils.PARAMERR, _err.Error(), nil))
@@ -38,9 +37,9 @@ func AccountModify(c *gin.Context) {
 	if p.ID > 0 {
 		u.ID = p.ID
 	} else {
-		u.ID = currentUser["user_id"].(int)
+		u.ID = currentUser.UserID
 	}
-	if _, _err := u.Merge(p.State, p.RoleID, 0, p.Name, p.Password, p.Avatar, p.Email); _err != nil {
+	if _, _err := u.Update(p.State, p.RoleID, 0, p.Name, p.Password, p.Avatar, p.Email); _err != nil {
 		c.JSON(http.StatusOK, utils.RespJson(utils.REQERR, _err.Error(), nil))
 		return
 	}
@@ -52,14 +51,10 @@ func AccountSubAdd(c *gin.Context) {
 		c.JSON(http.StatusOK, utils.RespJson(utils.PARAMERR, _err.Error(), nil))
 		return
 	}
-	var currentUser gin.H
-	if tmp, ok := c.Get("claims"); ok {
-		if claims, ok := tmp.(gin.H); ok {
-			currentUser = claims
-		}
-	}
+	var currentUser PayLoad
+	GetCurrentUser(c, &currentUser)
 	var u User
-	if _, _err := u.Merge(p.State, p.RoleID, currentUser["group_id"].(int), p.Name, p.Password, p.Avatar, p.Email); _err != nil {
+	if _, _err := u.Add(p.RoleID, currentUser.GroupID, p.Name, p.Password, p.Avatar, p.Email); _err != nil {
 		c.JSON(http.StatusOK, utils.RespJson(utils.REQERR, _err.Error(), nil))
 		return
 	}
@@ -129,14 +124,10 @@ func AccountPasswordModify(c *gin.Context) {
 		c.JSON(http.StatusOK, utils.RespJson(utils.PARAMERR, _err.Error(), nil))
 		return
 	}
-	var currentUser gin.H
-	if tmp, ok := c.Get("claims"); ok {
-		if claims, ok := tmp.(gin.H); ok {
-			currentUser = claims
-		}
-	}
+	var currentUser PayLoad
+	GetCurrentUser(c, &currentUser)
 	var u User
-	if MysqlDB.First(&u, currentUser["user_id"].(int)); u.ID == 0 {
+	if MysqlDB.First(&u, currentUser.UserID); u.ID == 0 {
 		c.JSON(http.StatusOK, utils.RespJson(utils.PARAMERR, "Can not find this user, Please regist", nil))
 		return
 	}
@@ -145,22 +136,12 @@ func AccountPasswordModify(c *gin.Context) {
 		c.JSON(http.StatusOK, utils.RespJson(utils.PARAMERR, "Name or password error", nil))
 		return
 	}
-	tmp, err := base64.StdEncoding.DecodeString(p.NewPassword)
-	if err != nil {
-		c.JSON(http.StatusOK, utils.RespJson(utils.PARAMERR, "Parse password error!", nil))
-		return
-	}
-	newPwd, err := utils.GeneratePasswordHash(string(tmp))
-	if err != nil {
-		c.JSON(http.StatusOK, utils.RespJson(utils.PARAMERR, "Generate password error!", nil))
-		return
-	}
-	if currentUser["group_id"]==GROUP_SYS_ADMIN_ID || currentUser["role_id"].(int)==ROLE_ADMIN_ID{
+	if currentUser.GroupID==GROUP_SYS_ADMIN_ID || currentUser.RoleID==ROLE_ADMIN_ID{
 		if p.ID > 0{
 			u.ID = p.ID
 		}
 	}
-	if _, _err := u.Merge(0, 0, 0, "", newPwd, "", ""); _err != nil {
+	if _err := u.PasswordUpdate(p.NewPassword); _err != nil {
 		c.JSON(http.StatusOK, utils.RespJson(utils.REQERR, _err.Error(), nil))
 		return
 	}
@@ -170,16 +151,18 @@ func AccountPasswordModify(c *gin.Context) {
 
 func AccountDel(c *gin.Context) {
 	type Param struct {
-		ID       int    `json:"id" binding:"required"`
+		IDs       []int    `json:"ids" binding:"required"`
 	}
 	var p Param
 	if _err := c.Bind(&p); _err != nil {
 		c.JSON(http.StatusOK, utils.RespJson(utils.PARAMERR, _err.Error(), nil))
 		return
 	}
-	u := User{ID: p.ID}
-	if _, _err := u.Merge(2, 0, 0, "","", "", ""); _err != nil {
-		c.JSON(http.StatusOK, utils.RespJson(utils.REQERR, _err.Error(), nil))
+	var currentUser PayLoad
+	GetCurrentUser(c, &currentUser)
+	var u User
+	if _err := u.Del(p.IDs, currentUser.GroupID); _err!=nil {
+		c.JSON(http.StatusOK, utils.RespJson(utils.PARAMERR, _err.Error(), nil))
 		return
 	}
 	c.JSON(http.StatusOK, utils.RespJson(utils.REQOK, "ok", nil))
@@ -187,14 +170,10 @@ func AccountDel(c *gin.Context) {
 
 
 func AccountMenu(c *gin.Context){
-	var currentUser gin.H
-	if tmp, ok := c.Get("claims"); ok {
-		if claims, ok := tmp.(gin.H); ok {
-			currentUser = claims
-		}
-	}
+	var currentUser PayLoad
+	GetCurrentUser(c, &currentUser)
 	var u User
-	if MysqlDB.First(&u, currentUser["user_id"].(int)); u.ID == 0 {
+	if MysqlDB.First(&u, currentUser.UserID); u.ID == 0 {
 		c.JSON(http.StatusOK, utils.RespJson(utils.REQERR, "Can not find user!", nil))
 		return
 	}
@@ -214,12 +193,8 @@ func GroupModify(c *gin.Context){
 		Kind     int8   `json:"kind"`
 		State    int8   `json:"state"`
 	}
-	var currentUser gin.H
-	if tmp, ok := c.Get("claims"); ok {
-		if claims, ok := tmp.(gin.H); ok {
-			currentUser = claims
-		}
-	}
+	var currentUser PayLoad
+	GetCurrentUser(c, &currentUser)
 	var p Param
 	if err := c.Bind(&p); err != nil {
 		c.JSON(http.StatusOK, utils.RespJson(utils.PARAMERR, err.Error(), nil))
@@ -229,9 +204,9 @@ func GroupModify(c *gin.Context){
 	if p.ID > 0 {
 		g.ID = p.ID
 	} else {
-		g.ID = currentUser["group_id"].(int)
+		g.ID = currentUser.GroupID
 	}
-	if _, _err := g.Merge(p.Name, p.Kind, p.State); _err != nil {
+	if _, _err := g.Update(p.Name, p.Kind, p.State); _err != nil {
 		c.JSON(http.StatusOK, utils.RespJson(utils.REQERR, _err.Error(), nil))
 		return
 	}
@@ -247,7 +222,6 @@ func GroupList(c *gin.Context){
 	var total int
 	sql := MysqlDB.Table("group")
 	if searchKey != "" {
-		fmt.Println("searchKey:", searchKey)
 		sql = sql.Where("name LIKE ?", "%"+searchKey+"%").Count(&total)
 	} else {
 		sql = sql.Count(&total)
@@ -281,15 +255,17 @@ func GroupList(c *gin.Context){
 
 func GroupDel(c *gin.Context){
 	type Param struct {
-		ID       int    `json:"id" binding:"required"`
+		IDs       []int    `json:"ids" binding:"required"`
 	}
 	var p Param
 	if _err := c.Bind(&p); _err != nil {
 		c.JSON(http.StatusOK, utils.RespJson(utils.PARAMERR, _err.Error(), nil))
 		return
 	}
-	g := Group{ID: p.ID}
-	if _, _err := g.Merge("", 0, 2); _err != nil {
+	var currentUser PayLoad
+	GetCurrentUser(c, &currentUser)
+	var g Group
+	if _err := g.Del(p.IDs, currentUser.GroupID); _err != nil {
 		c.JSON(http.StatusOK, utils.RespJson(utils.REQERR, _err.Error(), nil))
 		return
 	}
@@ -311,25 +287,28 @@ func RoleModify(c *gin.Context) {
 		c.JSON(http.StatusOK, utils.RespJson(utils.PARAMERR, err.Error(), nil))
 		return
 	}
-	var currentUser gin.H
-	if tmp, ok := c.Get("claims"); ok {
-		if claims, ok := tmp.(gin.H); ok {
-			currentUser = claims
-		}
-	}
-	var r Role
-	if p.ID > 0{
-		r.ID = p.ID
+	var currentUser PayLoad
+	GetCurrentUser(c, &currentUser)
+	var r = Role{ID: p.ID}
+	if r.ID > 0{
+		MysqlDB.First(&r)
 	}
 	var groupID int
 	if p.GroupID > 0 {
 		groupID = p.GroupID
 	} else {
-		groupID = currentUser["group_id"].(int)
+		groupID = currentUser.GroupID
 	}
-	if _, _err := r.Merge(groupID, p.Name, p.Menu, p.State); _err != nil {
-		c.JSON(http.StatusOK, utils.RespJson(utils.REQERR, _err.Error(), nil))
-		return
+	if r.ID > 0{
+		if _, _err := r.Update(groupID, p.Name, p.Menu, p.State); _err != nil {
+			c.JSON(http.StatusOK, utils.RespJson(utils.REQERR, _err.Error(), nil))
+			return
+		}
+	} else {
+		if _, _err := r.Add(groupID, p.Name, p.Menu); _err != nil {
+			c.JSON(http.StatusOK, utils.RespJson(utils.REQERR, _err.Error(), nil))
+			return
+		}
 	}
 	c.JSON(http.StatusOK, utils.RespJson(utils.REQOK, "ok", gin.H{"id": r.ID}))
 }
@@ -340,13 +319,9 @@ func RoleList(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("per_page", "10"))
 	var total int
-	var currentUser gin.H
-	if tmp, ok := c.Get("claims"); ok {
-		if claims, ok := tmp.(gin.H); ok {
-			currentUser = claims
-		}
-	}
-	groupID := currentUser["group_id"].(int)
+	var currentUser PayLoad
+	GetCurrentUser(c, &currentUser)
+	groupID := currentUser.GroupID
 	if groupID == GROUP_SYS_ADMIN_ID {
 		groupID, _ = strconv.Atoi(c.DefaultQuery("group_id", "0"))
 	}
@@ -362,21 +337,65 @@ func RoleList(c *gin.Context) {
 
 func RoleDel(c *gin.Context) {
 	type Param struct {
-		ID       int    `json:"id"`
+		IDs       []int    `json:"ids"`
 	}
 	var p Param
 	if _err := c.Bind(&p); _err != nil {
 		c.JSON(http.StatusOK, utils.RespJson(utils.PARAMERR, _err.Error(), nil))
 		return
 	}
-	r := Role{ID: p.ID}
-	if _, _err := r.Merge(p.ID, "", "", 2); _err != nil {
+	var currentUser PayLoad
+	GetCurrentUser(c, &currentUser)
+	var r Role
+	if _err := r.Del(p.IDs, currentUser.GroupID); _err != nil {
 		c.JSON(http.StatusOK, utils.RespJson(utils.REQERR, _err.Error(), nil))
 		return
 	}
 	c.JSON(http.StatusOK, utils.RespJson(utils.REQOK, "ok", nil))
 }
 
+
+func PasswordForget(c *gin.Context) {
+	type Param struct {
+		Name     string `json:"name"`
+		Email    string `json:"email"`
+	}
+	var p Param
+	if _err := c.Bind(&p); _err != nil {
+		c.JSON(http.StatusOK, utils.RespJson(utils.PARAMERR, _err.Error(), nil))
+		return
+	}
+	// TODO send email and create code
+	c.JSON(http.StatusOK, utils.RespJson(utils.REQOK, "ok", nil))
+}
+
+
+func CodeVerify(c *gin.Context) {
+	type Param struct {
+		Name     string `json:"name"`
+		Email    string `json:"email"`
+		Code     string `json:"code"`
+		Password string `json:"password"`
+	}
+	var p Param
+	if _err := c.Bind(&p); _err != nil {
+		c.JSON(http.StatusOK, utils.RespJson(utils.PARAMERR, _err.Error(), nil))
+		return
+	}
+	var u User
+	if MysqlDB.First(&u, "name=?", p.Name); u.ID==0 {
+		c.JSON(http.StatusOK, utils.RespJson(utils.PARAMERR, "Registed, Please login", nil))
+		return
+	}
+	if _err := u.PasswordUpdate(p.Password); _err != nil {
+		c.JSON(http.StatusOK, utils.RespJson(utils.PARAMERR, _err.Error(), nil))
+		return
+	}
+	c.JSON(http.StatusOK, utils.RespJson(utils.REQOK, "ok", nil))
+}
+
+
+// TODO
 func ManagerRolePermission(c *gin.Context) {
 	if c.Request.Method == "POST" {
 		type Param struct {

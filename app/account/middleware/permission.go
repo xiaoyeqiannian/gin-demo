@@ -13,18 +13,14 @@ import (
 
 func PermissionHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var currentUser gin.H
-		if tmp, ok := c.Get("claims"); ok {
-			if claims, ok := tmp.(gin.H); ok {
-				currentUser = claims
-			}
-		}
+		var currentUser PayLoad
+		GetCurrentUser(c, &currentUser)
 		// 获取请求的URI
 		obj := c.Request.URL.RequestURI()
 		// 获取请求方法
 		act := strings.ToLower(c.Request.Method)
 		// 获取用户的角色
-		roleID := currentUser["role_id"].(int)
+		roleID := currentUser.RoleID
 		var sub = ""
 		if roleID == model.ROLE_ROOT_ID{
 			sub = "root"

@@ -1,0 +1,93 @@
+info:
+  contact: {}
+paths:
+  /account/login:
+    post:
+      consumes:
+      - application/json
+      description: login
+      parameters:
+      - description: 登陆账号
+        in: body
+        name: username
+        required: true
+        schema:
+          type: string
+      - description: 密码
+        in: body
+        name: password
+        required: true
+        schema:
+          type: string
+      produces:
+      - application/json
+      responses:
+        "0":
+          description: '{"code":"0000","message":"ok","data":{"token":"xxx.xx.xx"}}'
+          schema:
+            type: string
+        "2101":
+          description: '{"code":"2101","message":"name or password error","data":null}'
+          schema:
+            type: string
+      summary: login
+      tags:
+      - login
+  /account/regist:
+    post:
+      consumes:
+      - application/json
+      description: regist
+      parameters:
+      - description: 登陆账号
+        in: body
+        name: username
+        required: true
+        schema:
+          type: string
+      - description: 密码
+        in: body
+        name: password
+        required: true
+        schema:
+          type: string
+      produces:
+      - application/json
+      responses:
+        "0":
+          description: '{"code":"0000","message":"ok","data":{"token":"xxx.xx.xx"}}'
+          schema:
+            type: string
+        "2101":
+          description: '{"code":"2101","message":"name or password error","data":null}'
+          schema:
+            type: string
+      summary: regist
+      tags:
+      - regist
+  /api/v1/file/upload:
+    post:
+      consumes:
+      - multipart/form-data
+      description: 上传文件
+      parameters:
+      - description: 文件
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "0":
+          description: '{"code": 0,"msg": "ok","data":{"src": "http://xx.xxx.com/xxx/df13e16abdd0c8317966dbe06cb20778"}}'
+          schema:
+            type: string
+        "100":
+          description: '{"code": -100,"msg": "参数错误","data": null}'
+          schema:
+            type: string
+      summary: 上传文件
+      tags:
+      - 文件
+swagger: "2.0"
